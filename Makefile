@@ -1,7 +1,7 @@
 GPU=0
 CUDNN=0
-OPENCV=0
-OPENMP=0
+OPENCV=1
+OPENMP=1
 DEBUG=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
@@ -19,7 +19,7 @@ ALIB=libdarknet.a
 EXEC=darknet
 OBJDIR=./obj/
 
-CC=gcc
+CC=/usr/local/Cellar/gcc/7.2.0/bin/gcc-7
 NVCC=nvcc 
 AR=ar
 ARFLAGS=rcs
