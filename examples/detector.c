@@ -562,9 +562,10 @@ void validate_detector_recall(char *cfgfile, char *weightfile)
     }
 }
 
-void optional_operations(image im, int num, float thresh, box *boxes, float **probs, char **names, int classes, int info, int backup, int save_item, int square, int w, int h, int gray)
+void optional_operations(image im, int num, float thresh, box *boxes, float **probs, char **names, int classes, int info, char *outdir, int backup, int save_item, int square, int w, int h, int gray)
 {
     int i, j;
+    char filename[4096] = {0};
 
     for (i = 0; i < num; ++i) {
         int class = -1;
@@ -602,11 +603,20 @@ void optional_operations(image im, int num, float thresh, box *boxes, float **pr
                 printf("im.h: %d\n", im.h);
             }
 
-            if (backup) save_image(im, "org");
+            if (outdir) {
+                sprintf(filename, "%s/org", outdir);
+            } else {
+                sprintf(filename, "org");
+            }
+
+            if (backup) save_image(im, filename);
 
             if (save_item) {
-                char filename[4096] = {0};
-                sprintf(filename, "%s_%d", names[class], i);
+                if (outdir) {
+                    sprintf(filename, "%s/%s_%d", outdir, names[class], i);
+                } else {
+                    sprintf(filename, "%s_%d", names[class], i);
+                }
                 if (square) {
                     width = width > height ? width : height;
                     height = height > width ? height : width;
@@ -625,7 +635,7 @@ void optional_operations(image im, int num, float thresh, box *boxes, float **pr
     }
 }
 
-void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen, int noshow, int info, int backup, int save_item, int square, int w, int h, int gray)
+void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen, int noshow, int info, char *outdir, int backup, int save_item, int square, int w, int h, int gray)
 {
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
@@ -674,7 +684,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         get_region_boxes(l, im.w, im.h, net->w, net->h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        optional_operations(im, l.w*l.h*l.n, thresh, boxes, probs, names, l.classes, info, backup, save_item, square, w, h, gray);
+        optional_operations(im, l.w*l.h*l.n, thresh, boxes, probs, names, l.classes, info, outdir, backup, save_item, square, w, h, gray);
         draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
         if(outfile){
             save_image(im, outfile);
@@ -742,6 +752,7 @@ void run_detector(int argc, char **argv)
     int fullscreen = find_arg(argc, argv, "-fullscreen");
     int noshow = find_arg(argc, argv, "-noshow");
     int info = find_arg(argc, argv, "-info");
+    char *outdir = find_char_arg(argc, argv, "-dir", 0);
     int backup = find_arg(argc, argv, "-backup");
     int save_item = find_arg(argc, argv, "-save_item");
     int square = find_arg(argc, argv, "-square");
@@ -754,7 +765,7 @@ void run_detector(int argc, char **argv)
     char *cfg = argv[4];
     char *weights = (argc > 5) ? argv[5] : 0;
     char *filename = (argc > 6) ? argv[6]: 0;
-    if(0==strcmp(argv[2], "test")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh, outfile, fullscreen, noshow, info, backup, save_item, square, width, height, gray);
+    if(0==strcmp(argv[2], "test")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh, outfile, fullscreen, noshow, info, outdir, backup, save_item, square, width, height, gray);
     else if(0==strcmp(argv[2], "train")) train_detector(datacfg, cfg, weights, gpus, ngpus, clear);
     else if(0==strcmp(argv[2], "valid")) validate_detector(datacfg, cfg, weights, outfile);
     else if(0==strcmp(argv[2], "valid2")) validate_detector_flip(datacfg, cfg, weights, outfile);
