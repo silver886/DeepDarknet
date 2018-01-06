@@ -562,7 +562,70 @@ void validate_detector_recall(char *cfgfile, char *weightfile)
     }
 }
 
-void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen, int noshow)
+void optional_operations(image im, int num, float thresh, box *boxes, float **probs, char **names, int classes, int info, int backup, int save_item, int square, int w, int h, int gray)
+{
+    int i, j;
+
+    for (i = 0; i < num; ++i) {
+        int class = -1;
+        for (j = 0; j < classes; ++j) if (probs[i][j] > thresh && class < 0) class = j;
+        if (class >= 0) {
+            box b = boxes[i];
+
+            int width = b.w*im.w;
+            int height = b.h*im.h;
+            int x = b.x*im.w;
+            int y = b.y*im.h;
+            int left  = (b.x-b.w/2.)*im.w;
+            int right = (b.x+b.w/2.)*im.w;
+            int top   = (b.y-b.h/2.)*im.h;
+            int bot   = (b.y+b.h/2.)*im.h;
+
+            if (left < 0) left = 0;
+            if (right > im.w-1) right = im.w-1;
+            if (top < 0) top = 0;
+            if (bot > im.h-1) bot = im.h-1;
+
+            if (info) {
+                printf("All boxes: %d\n", num);
+                printf("Current box: %d\n", i);
+                printf("Class No.: %d\n", class);
+                printf("Class: %s\n", names[class]);
+                printf("Probability: %f\n", probs[i][class]*100);
+                printf("Bounding Box: Left=%d, Top=%d, Right=%d, Bottom=%d\n", left, top, right, bot);
+
+                printf("b.x: %f\n", b.x);
+                printf("b.w: %f\n", b.w);
+                printf("b.y: %f\n", b.y);
+                printf("b.h: %f\n", b.h);
+                printf("im.w: %d\n", im.w);
+                printf("im.h: %d\n", im.h);
+            }
+
+            if (backup) save_image(im, "org");
+
+            if (save_item) {
+                char filename[4096] = {0};
+                sprintf(filename, "%s_%d", names[class], i);
+                if (square) {
+                    width = width > height ? width : height;
+                    height = height > width ? height : width;
+                    if (x-width/2. < 0) width = x*2;
+                    if (x-width/2. > im.w-1) width = (im.w-1-x)*2;
+                    if (y-height/2. < 0) height = y*2;
+                    if (y-height/2. > im.h-1) height = (im.h-1-y)*2;
+                }
+                image file = crop_image(im, left, top, width, height);
+                if (w && h) file = resize_image(file, w, h);
+                if (gray) file = grayscale_image(file);
+                save_image(file, filename);
+                free_image(file);
+            }
+        }
+    }
+}
+
+void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen, int noshow, int info, int backup, int save_item, int square, int w, int h, int gray)
 {
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
@@ -611,6 +674,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         get_region_boxes(l, im.w, im.h, net->w, net->h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+        optional_operations(im, l.w*l.h*l.n, thresh, boxes, probs, names, l.classes, info, backup, save_item, square, w, h, gray);
         draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
         if(outfile){
             save_image(im, outfile);
@@ -677,6 +741,11 @@ void run_detector(int argc, char **argv)
     int clear = find_arg(argc, argv, "-clear");
     int fullscreen = find_arg(argc, argv, "-fullscreen");
     int noshow = find_arg(argc, argv, "-noshow");
+    int info = find_arg(argc, argv, "-info");
+    int backup = find_arg(argc, argv, "-backup");
+    int save_item = find_arg(argc, argv, "-save_item");
+    int square = find_arg(argc, argv, "-square");
+    int gray = find_arg(argc, argv, "-gray");
     int width = find_int_arg(argc, argv, "-w", 0);
     int height = find_int_arg(argc, argv, "-h", 0);
     int fps = find_int_arg(argc, argv, "-fps", 0);
@@ -685,7 +754,7 @@ void run_detector(int argc, char **argv)
     char *cfg = argv[4];
     char *weights = (argc > 5) ? argv[5] : 0;
     char *filename = (argc > 6) ? argv[6]: 0;
-    if(0==strcmp(argv[2], "test")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh, outfile, fullscreen, noshow);
+    if(0==strcmp(argv[2], "test")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh, outfile, fullscreen, noshow, info, backup, save_item, square, width, height, gray);
     else if(0==strcmp(argv[2], "train")) train_detector(datacfg, cfg, weights, gpus, ngpus, clear);
     else if(0==strcmp(argv[2], "valid")) validate_detector(datacfg, cfg, weights, outfile);
     else if(0==strcmp(argv[2], "valid2")) validate_detector_flip(datacfg, cfg, weights, outfile);
