@@ -29,6 +29,7 @@ int write_all_fail(int fd, char *buffer, size_t bytes);
 void find_replace(char *str, char *orig, char *rep, char *output);
 void malloc_error();
 void file_error(char *s);
+int mkpath(char* file_path, mode_t mode);
 void strip(char *s);
 void strip_char(char *s, char bad);
 list *split_str(char *s, char delim);

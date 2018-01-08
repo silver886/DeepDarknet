@@ -281,6 +281,20 @@ void file_error(char *s)
     exit(0);
 }
 
+int mkpath(char* file_path, mode_t mode) {
+    assert(file_path && *file_path);
+    char* p;
+    if (file_path && *file_path && file_path[strlen(file_path) - 1] != '/') strcat(file_path, "/");
+    for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
+        *p='\0';
+        if (mkdir(file_path, mode)==-1) {
+            if (errno!=EEXIST) { *p='/'; return -1; }
+        }
+        *p='/';
+    }
+    return 0;
+}
+
 list *split_str(char *s, char delim)
 {
     size_t i;

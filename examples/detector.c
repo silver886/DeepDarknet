@@ -576,6 +576,7 @@ void optional_operations(image im, int num, float thresh, box *boxes, float **pr
         coutdir = fgets(coutdir, 256, stdin);
         if(!coutdir) return;
         strtok(coutdir, "\n");
+        if (mkpath(coutdir, 0755)) return;
     }
 
     for (i = 0; i < num; ++i) {
