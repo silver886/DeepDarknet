@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 extern void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filename, int top);
-extern void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen, int noshow, int info, char *outdir, int backup, int save_item, int square, int w, int h, int gray);
+extern void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen, int noshow, int info, char *outdir, int cdir, int backup, int save_item, int square, int w, int h, int gray);
 extern void run_yolo(int argc, char **argv);
 extern void run_detector(int argc, char **argv);
 extern void run_coco(int argc, char **argv);
@@ -422,13 +422,14 @@ int main(int argc, char **argv)
         int noshow = find_arg(argc, argv, "-noshow");
         int info = find_arg(argc, argv, "-info");
         char *outdir = find_char_arg(argc, argv, "-dir", 0);
+        int cdir = find_arg(argc, argv, "-cdir");
         int backup = find_arg(argc, argv, "-backup");
         int save_item = find_arg(argc, argv, "-save_item");
         int square = find_arg(argc, argv, "-square");
         int gray = find_arg(argc, argv, "-gray");
         int width = find_int_arg(argc, argv, "-w", 0);
         int height = find_int_arg(argc, argv, "-h", 0);
-        test_detector("cfg/coco.data", argv[2], argv[3], filename, thresh, .5, outfile, fullscreen, noshow, info, outdir, backup, save_item, square, width, height, gray);
+        test_detector("cfg/coco.data", argv[2], argv[3], filename, thresh, .5, outfile, fullscreen, noshow, info, outdir, cdir, backup, save_item, square, width, height, gray);
     } else if (0 == strcmp(argv[1], "cifar")){
         run_cifar(argc, argv);
     } else if (0 == strcmp(argv[1], "go")){
