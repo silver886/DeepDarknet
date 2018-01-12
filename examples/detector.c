@@ -605,7 +605,7 @@ void optional_operations(image im, int num, float thresh, box *boxes, float **pr
                 printf("Class No.: %d\n", class);
                 printf("Class: %s\n", names[class]);
                 printf("Probability: %f\n", probs[i][class]*100);
-                printf("Bounding Box: Left=%d, Top=%d, Right=%d, Bottom=%d\n", left, top, right, bot);
+                printf("Bounding Box: X=%d, Y=%d, Width=%d, Height=%d, Left=%d, Top=%d, Right=%d, Bottom=%d\n", x, y, width, height, left, top, right, bot);
 
                 printf("b.x: %f\n", b.x);
                 printf("b.w: %f\n", b.w);
@@ -634,12 +634,42 @@ void optional_operations(image im, int num, float thresh, box *boxes, float **pr
                     sprintf(filename, "%s_%d", names[class], i);
                 }
                 if (square) {
-                    width = width > height ? width : height;
-                    height = height > width ? height : width;
-                    if (x-width/2. < 0) width = x*2;
-                    if (x-width/2. > im.w-1) width = (im.w-1-x)*2;
-                    if (y-height/2. < 0) height = y*2;
-                    if (y-height/2. > im.h-1) height = (im.h-1-y)*2;
+                    if (width < height) {
+                        left -= (height-width)/2;
+                        width = height;
+                    }
+                    if (height < width) {
+                        top -= (width-height)/2;
+                        height = width;
+                    }
+                    if (x-width/2. < 0) {
+                        width = x*2;
+                        left = 0;
+                    }
+                    if (x+width/2. > im.w-1) {
+                        width = (im.w-1-x)*2;
+                        left = im.w-width;
+                    }
+                    if (y-height/2. < 0) {
+                        height = y*2;
+                        top = 0;
+                    }
+                    if (y+height/2. > im.h-1) {
+                        height = (im.h-1-y)*2;
+                        top = im.h-height;
+                    }
+                    if (width < height) {
+                        left -= (height-width)/2;
+                        width = height;
+                    }
+                    if (height < width) {
+                        top -= (width-height)/2;
+                        height = width;
+                    }
+                    if (x-width/2. < 0) left = 0;
+                    if (x+width/2. > im.w-1) left = im.w-width;
+                    if (y-height/2. < 0) top = 0;
+                    if (y+height/2. > im.h-1) top = im.h-height;
                 }
                 image file = crop_image(im, left, top, width, height);
                 if (w && h) file = resize_image(file, w, h);
